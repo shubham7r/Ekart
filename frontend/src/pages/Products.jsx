@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import FilterSidebar from "@/components/FilterSidebar";
 import ProductCard from "../components/ProductCard";
+import { useDispatch } from "react-redux";
+import { setProducts } from "@/redux/productSlice";
 
 import {
   Select,
@@ -15,7 +17,11 @@ import {
 const Products = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [priceRange, setPriceRange] = useState([0, 99999]);  
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
+  const dispatch = useDispatch(); 
   const getAllProducts = async () => {
     try {
       setLoading(true);
@@ -25,6 +31,7 @@ const Products = () => {
 
       if (res.data.success) {
         setAllProducts(res.data.products);
+        dispatch(setProducts(res.data.products));
       }
     } catch (error) {
       console.log(error);
@@ -40,9 +47,10 @@ const Products = () => {
 
   return (
     <div className="pt-20 pb-10">
+
       <div className="max-w-7xl mx-auto flex gap-7">
         {/* Sidebar */}
-        <FilterSidebar />
+        <FilterSidebar allProducts={allProducts} priceRange={priceRange} setPriceRange={setPriceRange} search={search} setSearch={setSearch} category={category} setCategory={setCategory} brand={brand} setBrand={setBrand}/>
 
         {/* Main Section */}
         <div className="flex flex-col flex-1">
