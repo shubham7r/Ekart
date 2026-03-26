@@ -9,6 +9,7 @@ import { setUser } from "@/redux/userSlice";
 
 const Navbar = () => {
   const { user } = useSelector((store) => store.user);
+  const { cart } = useSelector((store) => store.product);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -76,7 +77,7 @@ const Navbar = () => {
           <Link to="/cart" className="relative">
             <ShoppingCart />
             <span className="bg-pink-500 rounded-full absolute text-white -top-3 -right-5 px-2 text-sm">
-              0
+              {cart?.items?.length || 0}
             </span>
           </Link>
 
