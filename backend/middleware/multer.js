@@ -1,7 +1,6 @@
 import multer from "multer";
 
 /* ================= STORAGE ================= */
-// Store file in memory (required for Cloudinary upload)
 const storage = multer.memoryStorage();
 
 /* ================= FILE FILTER ================= */
@@ -18,13 +17,34 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB
   },
 });
 
-/* ================= EXPORTS ================= */
-// ✅ must match frontend formData.append("profilePic", file)
-export const singleUpload = upload.single("profilePic");
+/* ================= WRAPPED EXPORTS ================= */
 
-// optional multiple images
-export const multipleUpload = upload.array("images", 5);
+// ✅ SINGLE FILE
+export const singleUpload = (req, res, next) => {
+  upload.single("profilePic")(req, res, function (err) {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+    next();
+  });
+};
+
+// ✅ MULTIPLE FILES
+export const multipleUpload = (req, res, next) => {
+  upload.array("images", 5)(req, res, function (err) {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+    next();
+  });
+};

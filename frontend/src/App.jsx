@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-
+import Cart from "@/pages/Cart";
 import Verify from "@/pages/verify";  
 import Home from "@/pages/Home";
 import Signup from "@/pages/Signup";
@@ -52,7 +52,15 @@ const router = createBrowserRouter([
       <>
         <Navbar />
         <Products />
-         
+      </>
+    ),
+  },
+  {
+    path: "/cart",
+    element: (
+      <>
+       <Navbar/>
+        <Cart />
       </>
     ),
   },

@@ -1,16 +1,20 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 
-function FilterSidebar({ allProducts = [], priceRange, setPriceRange }) {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
-
-  // Unique Categories
+function FilterSidebar({
+  search,
+  setSearch,
+  category,
+  setCategory,
+  brand,
+  setBrand,
+  allProducts = [],
+  priceRange,
+  setPriceRange,
+}) {
   const UniqueCategory = useMemo(() => {
     return [...new Set(allProducts.map((item) => item.category))];
   }, [allProducts]);
 
-  // Unique Brands
   const UniqueBrand = useMemo(() => {
     return [...new Set(allProducts.map((item) => item.brand))];
   }, [allProducts]);
@@ -37,6 +41,17 @@ function FilterSidebar({ allProducts = [], priceRange, setPriceRange }) {
       <h1 className="mt-5 font-semibold text-xl">Category</h1>
 
       <div className="flex flex-col gap-2 mt-3">
+        <div className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="category"
+            value=""
+            checked={category === ""}
+            onChange={() => setCategory("")}
+          />
+          <label>All</label>
+        </div>
+
         {UniqueCategory.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
             <input
@@ -51,7 +66,7 @@ function FilterSidebar({ allProducts = [], priceRange, setPriceRange }) {
         ))}
       </div>
 
-      {/* brands */}
+      {/* Brand */}
       <h1 className="mt-5 font-semibold text-xl">Brand</h1>
 
       <select
@@ -61,74 +76,81 @@ function FilterSidebar({ allProducts = [], priceRange, setPriceRange }) {
       >
         <option value="">All Brands</option>
 
-        {UniqueBrand.map((item, index) => {
-          return <option key={index}>{item.toUpperCase()}</option>;
-        })}
+        {UniqueBrand.map((item, index) => (
+          <option key={index} value={item}>
+            {item.toUpperCase()}
+          </option>
+        ))}
       </select>
 
-      {/* price range */}
+      {/* Price Range */}
       <h1 className="mt-5 font-semibold text-xl mb-3">Price Range</h1>
 
       <div className="flex flex-col gap-2">
         <label>
-          Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
+          ₹{priceRange[0]} - ₹{priceRange[1]}
         </label>
 
         <div className="flex gap-2 items-center">
           <input
             type="number"
-            min="0"
-            max="5000"
             value={priceRange[0]}
-            onChange={(e) =>
-              setPriceRange([Number(e.target.value), priceRange[1]])
-            }
-            className="w-20 p-1 border border-gray-300 rounded"
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value <= priceRange[1]) {
+                setPriceRange([value, priceRange[1]]);
+              }
+            }}
+            className="w-20 p-1 border rounded"
           />
 
           <span>-</span>
 
           <input
             type="number"
-            min="0"
-            max="999999"
             value={priceRange[1]}
-            onChange={(e) =>
-              setPriceRange([priceRange[0], Number(e.target.value)])
-            }
-            className="w-20 p-1 border border-gray-300 rounded"
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value >= priceRange[0]) {
+                setPriceRange([priceRange[0], value]);
+              }
+            }}
+            className="w-20 p-1 border rounded"
           />
         </div>
 
+        {/* Sliders */}
         <input
           type="range"
           min="0"
           max="5000"
-          step="100"
           value={priceRange[0]}
-          onChange={(e) =>
-            setPriceRange([Number(e.target.value), priceRange[1]])
-          }
-          className="w-full"
+          onChange={(e) => {
+            const value = Number(e.target.value);
+            if (value <= priceRange[1]) {
+              setPriceRange([value, priceRange[1]]);
+            }
+          }}
         />
 
         <input
           type="range"
           min="0"
-          max="999999"
-          step="100"
+          max="99999"
           value={priceRange[1]}
-          onChange={(e) =>
-            setPriceRange([priceRange[0], Number(e.target.value)])
-          }
-          className="w-full"
+          onChange={(e) => {
+            const value = Number(e.target.value);
+            if (value >= priceRange[0]) {
+              setPriceRange([priceRange[0], value]);
+            }
+          }}
         />
       </div>
 
-      {/* Reset button */}
+      {/* Reset */}
       <button
         onClick={handleReset}
-        className="bg-pink-600 text-white mt-5 cursor-pointer w-full p-2 rounded"
+        className="bg-pink-600 text-white mt-5 w-full p-2 rounded"
       >
         Reset Filters
       </button>

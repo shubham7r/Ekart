@@ -165,6 +165,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // ✅ Validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -172,15 +173,17 @@ export const login = async (req, res) => {
       });
     }
 
+    // ✅ Check user
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User not exists",
+        message: "User does not exist",
       });
     }
 
+    // ✅ Check password
     const isPasswordValid = await bcrypt.compare(
       password,
       existingUser.password,
@@ -189,43 +192,54 @@ export const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Credentials",
+        message: "Invalid credentials",
       });
     }
 
+    // ✅ Check verification
     if (!existingUser.isVerified) {
       return res.status(400).json({
         success: false,
-        message: "Verify your account then login",
+        message: "Please verify your account before login",
       });
     }
 
+    // 🔥 FIXED TOKEN (IMPORTANT)
     const accessToken = jwt.sign(
-      { id: existingUser._id },
+      { _id: existingUser._id }, // ✅ use _id
       process.env.SECRET_KEY,
       { expiresIn: "1d" },
     );
 
     const refreshToken = jwt.sign(
-      { id: existingUser._id },
+      { _id: existingUser._id }, // ✅ use _id
       process.env.SECRET_KEY,
       { expiresIn: "30d" },
     );
 
+    // ✅ Update login status
     existingUser.isLoggedIn = true;
     await existingUser.save();
 
+    // ✅ Manage session
     await Session.deleteOne({ userId: existingUser._id });
     await Session.create({ userId: existingUser._id });
 
+    // ✅ Response
     return res.status(200).json({
       success: true,
       message: `Welcome back ${existingUser.firstName}`,
-      user: existingUser,
+      user: {
+        _id: existingUser._id,
+        email: existingUser.email,
+        firstName: existingUser.firstName,
+        role: existingUser.role,
+      },
       accessToken,
       refreshToken,
     });
   } catch (error) {
+    console.error("LOGIN ERROR:", error); // 🔍 debug
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -233,17 +247,29 @@ export const login = async (req, res) => {
   }
 };
 
-/* ================= LOGOUT ================= */
+// ================= LOGOUT =================
 export const logout = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token missing",
+      });
+    }
+
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    const user = await User.findById(decoded.id);
-    if (!user)
-      return res
-        .status(400)
-        .json({ success: false, message: "User not found" });
+    // 🔥 use _id
+    const user = await User.findById(decoded._id);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     await Session.deleteOne({ userId: user._id });
 
@@ -255,7 +281,11 @@ export const logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("LOGOUT ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

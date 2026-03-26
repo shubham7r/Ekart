@@ -6,6 +6,7 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 3000;
 import productRoute from "./routes/productRoute.js";
+import cartRoute from "./routes/cartRoute.js";
 
 // middleware
 app.use(express.json());
@@ -20,6 +21,8 @@ app.use(
 
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/product", productRoute);
+
+app.use("/api/v1/cart", cartRoute);
 
 // http://localhost:8000/api/v1/user/register
 
