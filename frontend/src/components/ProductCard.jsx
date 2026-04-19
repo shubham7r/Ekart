@@ -6,11 +6,13 @@ import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setCart } from "@/redux/productSlice";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
 
 const ProductCard = ({ product, loading }) => {
   const { _id, productImg, productPrice, productName } = product || {};
 
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ ADD THIS
   const accessToken = localStorage.getItem("accessToken");
 
   // 🛒 Add to Cart Function
@@ -33,8 +35,6 @@ const ProductCard = ({ product, loading }) => {
 
       if (res.data.success) {
         toast.success("Product added to cart");
-
-        // ✅ Update Redux cart
         dispatch(setCart(res.data.cart));
       }
     } catch (error) {
@@ -51,6 +51,7 @@ const ProductCard = ({ product, loading }) => {
           <Skeleton className="w-full h-full rounded-lg" />
         ) : (
           <img
+            onClick={() => navigate(`/products/${_id}`)} // ✅ also simplified
             src={productImg?.[0]?.url}
             alt={productName}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105 cursor-pointer"
@@ -70,7 +71,6 @@ const ProductCard = ({ product, loading }) => {
           <h1 className="font-semibold line-clamp-2">{productName}</h1>
           <h2 className="font-bold text-lg">₹{productPrice}</h2>
 
-          {/* 🛒 Add to Cart Button */}
           <Button
             onClick={addToCart}
             className="bg-pink-600 hover:bg-pink-700 w-full mt-2"

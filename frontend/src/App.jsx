@@ -1,15 +1,32 @@
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
+// Components
 import Navbar from "@/components/Navbar";
-import Cart from "@/pages/Cart";
-import Verify from "@/pages/verify";  
+import Footer from "@/components/Footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
+
+// Public Pages
 import Home from "@/pages/Home";
 import Signup from "@/pages/Signup";
 import Login from "@/pages/Login";
+import Verify from "@/pages/verify";
 import VerifyEmail from "@/pages/VerifyEmail";
-import Footer from "@/components/Footer";
 import Profile from "@/pages/Profile";
 import Products from "@/pages/Products";
+import Cart from "@/pages/Cart";
+import SingleProduct from "@/pages/SingleProduct";
+
+// Dashboard Layout + Admin Pages
+import Dashboard from "@/pages/Dashboard";
+import AdminSales from "@/pages/admin/AdminSales";
+import AddProduct from "@/pages/admin/AddProduct";
+import AdminProduct from "@/pages/admin/AdminProduct";
+import AdminOrders from "@/pages/admin/AdminOrders";
+import AdminUsers from "@/pages/admin/AdminUsers";
+
 const router = createBrowserRouter([
+  // 🌐 Home
   {
     path: "/",
     element: (
@@ -20,6 +37,8 @@ const router = createBrowserRouter([
       </>
     ),
   },
+
+  // 🔐 Auth
   {
     path: "/signup",
     element: <Signup />,
@@ -28,6 +47,8 @@ const router = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
+
+  // 📧 Verify
   {
     path: "/verify",
     element: <Verify />,
@@ -36,16 +57,22 @@ const router = createBrowserRouter([
     path: "/verify/:token",
     element: <VerifyEmail />,
   },
+
+  // 👤 Profile
   {
     path: "/profile/:userId",
     element: (
-      <>
-        <Navbar />
-        <Profile />
-        <Footer />
-      </>
+      <ProtectedRoute>
+        <>
+          <Navbar />
+          <Profile />
+          <Footer />
+        </>
+      </ProtectedRoute>
     ),
   },
+
+  // 🛍️ Products
   {
     path: "/products",
     element: (
@@ -56,22 +83,67 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/cart",
+    path: "/products/:id",
     element: (
       <>
-       <Navbar/>
-        <Cart />
+        <Navbar />
+        <SingleProduct />
       </>
     ),
+  },
+
+  // 🛒 Cart
+  {
+    path: "/cart",
+    element: (
+      <ProtectedRoute>
+        <>
+          <Navbar />
+          <Cart />
+        </>
+      </ProtectedRoute>
+    ),
+  },
+
+  // 📊 Dashboard (Admin)
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute adminOnly={true}>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "sales", // ✅ Now /dashboard/sales works
+        element: <AdminSales />,
+      },
+      {
+        index: true, // default page (/dashboard)
+        element: <AdminSales />,
+      },
+      {
+        path: "add-product",
+        element: <AddProduct />,
+      },
+      {
+        path: "products",
+        element: <AdminProduct />,
+      },
+      {
+        path: "orders",
+        element: <AdminOrders />,
+      },
+      {
+        path: "users",
+        element: <AdminUsers />,
+      },
+    ],
   },
 ]);
 
 const App = () => {
-  return (
-    <>
-      <RouterProvider router={router} />
-    </>
-  );
+  return <RouterProvider router={router} />;
 };
 
 export default App;

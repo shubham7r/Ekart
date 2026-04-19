@@ -36,7 +36,7 @@ const Hero = () => {
             <img
               src="/ekart-hero1.png"
               alt=""
-              width={500}
+              width={300}
               height={400}
               className="rounded-lg shadow-2xl"
             />

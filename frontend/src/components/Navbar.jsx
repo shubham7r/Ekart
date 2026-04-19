@@ -10,6 +10,7 @@ import { setUser } from "@/redux/userSlice";
 const Navbar = () => {
   const { user } = useSelector((store) => store.user);
   const { cart } = useSelector((store) => store.product);
+  const admin = user?.role === "admin" ? true : false;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -70,6 +71,11 @@ const Navbar = () => {
             {user && (
               <li>
                 <Link to={`/profile/${user._id}`}>Hello {user.firstName}</Link>
+              </li>
+            )}
+            {admin && (
+              <li>
+                <Link to="/dashboard/sales">Dashboard</Link>
               </li>
             )}
           </ul>

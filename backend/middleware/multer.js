@@ -1,9 +1,9 @@
 import multer from "multer";
 
-/* ================= STORAGE ================= */
+// ================= STORAGE =================
 const storage = multer.memoryStorage();
 
-/* ================= FILE FILTER ================= */
+// ================= FILE FILTER =================
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -12,21 +12,20 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-/* ================= MULTER INSTANCE ================= */
+// ================= MULTER INSTANCE =================
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024, // 5MB per file
   },
 });
 
-/* ================= WRAPPED EXPORTS ================= */
-
-// ✅ SINGLE FILE
+// ================= SINGLE FILE UPLOAD =================
 export const singleUpload = (req, res, next) => {
-  upload.single("profilePic")(req, res, function (err) {
+  upload.single("profilePic")(req, res, (err) => {
     if (err) {
+      console.log("MULTER ERROR:", err.message);
       return res.status(400).json({
         success: false,
         message: err.message,
@@ -36,15 +35,23 @@ export const singleUpload = (req, res, next) => {
   });
 };
 
-// ✅ MULTIPLE FILES
+// ================= MULTIPLE FILE UPLOAD =================
+// ⚠️ MUST MATCH FRONTEND: formData.append("productImg", file)
 export const multipleUpload = (req, res, next) => {
-  upload.array("images", 5)(req, res, function (err) {
+  upload.array("productImg", 5)(req, res, (err) => {
     if (err) {
+      console.log("MULTER ERROR:", err.message);
       return res.status(400).json({
         success: false,
         message: err.message,
       });
     }
+
+    // 🔥 Debug logs (very useful)
+    console.log("FILES RECEIVED:", req.files);
+
     next();
   });
 };
+
+export default upload;

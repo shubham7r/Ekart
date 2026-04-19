@@ -2,6 +2,7 @@ import { Product } from "../models/productModel.js";
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../utils/cloudinary.js";
 
+// ================= ADD PRODUCT =================
 export const addProduct = async (req, res) => {
   try {
     const { productName, productDesc, productPrice, category, brand } =
@@ -9,29 +10,65 @@ export const addProduct = async (req, res) => {
 
     const userId = req.id;
 
-    if (!productName || !productDesc || !productPrice || !category || !brand) {
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
+
+    // ✅ Validation
+    if (
+      !productName?.trim() ||
+      !productDesc?.trim() ||
+      !productPrice ||
+      !category?.trim() ||
+      !brand?.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
     }
 
-    // ================= IMAGE UPLOAD =================
+    if (isNaN(productPrice)) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a number",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload at least one image",
+      });
+    }
+
     let productImg = [];
 
-    if (req.files && req.files.length > 0) {
-      for (let file of req.files) {
-        const fileUri = getDataUri(file);
+    // ================= IMAGE UPLOAD =================
+    for (let file of req.files) {
+      // 🔥 DEBUG (IMPORTANT)
+      console.log("FILE:", file);
+      console.log("BUFFER:", file.buffer);
 
-        const uploadResult = await cloudinary.uploader.upload(fileUri, {
-          folder: "mern_products",
-        });
+      const fileUri = getDataUri(file);
 
-        productImg.push({
-          url: uploadResult.secure_url,
-          public_id: uploadResult.public_id,
+      // ❌ If conversion fails
+      if (!fileUri || !fileUri.content) {
+        console.log("❌ fileUri:", fileUri);
+        return res.status(500).json({
+          success: false,
+          message: "File conversion failed",
         });
       }
+
+      // ✅ Upload to Cloudinary
+      const uploadResult = await cloudinary.uploader.upload(fileUri.content, {
+        folder: "mern_products",
+      });
+
+      productImg.push({
+        url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
+      });
     }
 
     // ================= SAVE PRODUCT =================
@@ -39,7 +76,7 @@ export const addProduct = async (req, res) => {
       userId,
       productName,
       productDesc,
-      productPrice,
+      productPrice: Number(productPrice),
       category,
       brand,
       productImg,
@@ -59,17 +96,10 @@ export const addProduct = async (req, res) => {
   }
 };
 
+// ================= GET ALL PRODUCTS =================
 export const getAllProduct = async (_, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-
-    if (!products || products.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No product available",
-        products: [],
-      });
-    }
 
     return res.status(200).json({
       success: true,
@@ -85,12 +115,12 @@ export const getAllProduct = async (_, res) => {
   }
 };
 
+// ================= DELETE PRODUCT =================
 export const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
     const userId = req.id;
 
-    // ===== Find product =====
     const product = await Product.findById(productId);
 
     if (!product) {
@@ -100,16 +130,15 @@ export const deleteProduct = async (req, res) => {
       });
     }
 
-    // ===== Authorization (owner only) =====
     if (product.userId.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        message: "Not authorized to delete this product",
+        message: "Not authorized",
       });
     }
 
-    // ===== Delete images from Cloudinary =====
-    if (product.productImg && product.productImg.length > 0) {
+    // ✅ Delete images from cloudinary
+    if (product.productImg?.length > 0) {
       for (let img of product.productImg) {
         if (img.public_id) {
           await cloudinary.uploader.destroy(img.public_id);
@@ -117,7 +146,6 @@ export const deleteProduct = async (req, res) => {
       }
     }
 
-    // ===== Delete product from DB =====
     await Product.findByIdAndDelete(productId);
 
     return res.status(200).json({
@@ -133,7 +161,7 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-
+// ================= UPDATE PRODUCT =================
 export const updateProduct = async (req, res) => {
   try {
     const productId = req.params.id;
@@ -142,7 +170,6 @@ export const updateProduct = async (req, res) => {
     const { productName, productDesc, productPrice, category, brand } =
       req.body;
 
-    // ===== Find product =====
     const product = await Product.findById(productId);
 
     if (!product) {
@@ -152,25 +179,24 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // ===== Authorization =====
     if (product.userId.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        message: "Not authorized to update this product",
+        message: "Not authorized",
       });
     }
 
-    // ===== Update fields =====
+    // ✅ Update fields
     product.productName = productName || product.productName;
     product.productDesc = productDesc || product.productDesc;
     product.productPrice = productPrice || product.productPrice;
     product.category = category || product.category;
     product.brand = brand || product.brand;
 
-    // ===== If new images uploaded =====
+    // ================= UPDATE IMAGES =================
     if (req.files && req.files.length > 0) {
-      // delete old images from cloudinary
-      if (product.productImg && product.productImg.length > 0) {
+      // delete old images
+      if (product.productImg?.length > 0) {
         for (let img of product.productImg) {
           if (img.public_id) {
             await cloudinary.uploader.destroy(img.public_id);
@@ -178,13 +204,12 @@ export const updateProduct = async (req, res) => {
         }
       }
 
-      // upload new images
       let newImages = [];
 
       for (let file of req.files) {
         const fileUri = getDataUri(file);
 
-        const uploadResult = await cloudinary.uploader.upload(fileUri, {
+        const uploadResult = await cloudinary.uploader.upload(fileUri.content, {
           folder: "mern_products",
         });
 

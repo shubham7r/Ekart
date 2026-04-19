@@ -1,23 +1,26 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/userModel.js";
 
-// 🔐 AUTH MIDDLEWARE
+// ================= AUTH MIDDLEWARE =================
 export const isAuthenticated = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    // ❌ No token
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
-        message: "Authorization token is missing or invalid",
+        message: "Authorization token missing",
       });
     }
 
     const token = authHeader.split(" ")[1];
 
+    // ❌ Verify token
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    const user = await User.findById(decoded._id);
+    // ❌ Find user
+    const user = await User.findById(decoded._id).select("-password");
 
     if (!user) {
       return res.status(401).json({
@@ -26,20 +29,38 @@ export const isAuthenticated = async (req, res, next) => {
       });
     }
 
+    // ✅ Attach user data
     req.user = user;
+    req.id = user._id;
 
     next();
   } catch (error) {
-    console.log("AUTH ERROR:", error);
+    console.log("AUTH ERROR:", error.message);
+
+    // 🔥 Handle specific JWT errors
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired, please login again",
+      });
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
     return res.status(401).json({
       success: false,
-      message: "Invalid token",
+      message: "Authentication failed",
     });
   }
 };
 
-// 🔐 ADMIN MIDDLEWARE (🔥 THIS WAS MISSING)
-export const isAdmin = async (req, res, next) => {
+// ================= ADMIN MIDDLEWARE =================
+export const isAdmin = (req, res, next) => {
   try {
     if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({
@@ -50,10 +71,10 @@ export const isAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log("ADMIN ERROR:", error);
+    console.log("ADMIN ERROR:", error.message);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Server error",
     });
   }
 };

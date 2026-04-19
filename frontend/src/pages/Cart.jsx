@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Trash2, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { setCart } from "@/redux/productSlice";
-import { toast } from "sonner"; // ✅ toast
+import { toast } from "sonner";
 
 const userLogo = "https://via.placeholder.com/100";
 
@@ -19,14 +19,25 @@ const Cart = () => {
   const { cart } = useSelector((store) => store.product);
   const items = cart?.items || [];
 
-  // ================= CALCULATIONS =================
-  const subtotal = cart?.totalPrice || 0;
-  const shipping = subtotal > 299 ? 0 : items.length > 0 ? 10 : 0;
-  const tax = Math.round(subtotal * 0.05);
-  const total = subtotal + shipping + tax;
-
   const API = "http://localhost:8000/api/v1/cart";
   const accessToken = localStorage.getItem("accessToken");
+
+  // ================= LOAD CART =================
+  const loadCart = async () => {
+    try {
+      const res = await axios.get(API, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (res.data.success) {
+        dispatch(setCart(res.data.cart));
+      }
+    } catch (error) {
+      console.log("LOAD CART ERROR:", error.response?.data || error.message);
+    }
+  };
 
   // ================= UPDATE =================
   const handleUpdateQuantity = async (productId, type) => {
@@ -56,7 +67,7 @@ const Cart = () => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        data: { productId }, // 🔥 important
+        data: { productId },
       });
 
       if (res.data.success) {
@@ -68,6 +79,19 @@ const Cart = () => {
       toast.error("Failed to remove product");
     }
   };
+
+  // ================= CALCULATIONS =================
+  const subtotal = cart?.totalPrice || 0;
+  const shipping = subtotal > 299 ? 0 : items.length > 0 ? 10 : 0;
+  const tax = Math.round(subtotal * 0.05);
+  const total = subtotal + shipping + tax;
+
+  // ================= USE EFFECT =================
+  useEffect(() => {
+    if (accessToken) {
+      loadCart();
+    }
+  }, [dispatch]);
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
